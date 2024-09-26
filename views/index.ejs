@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/styles.css">
+    <title>SpotiNode</title>
+</head>
+<body>
+    <div class="container">
+        <h1>Spotify</h1>
+        <a href="/upload" class="upload-button">Upload Song</a>
+        
+        <!-- Search Bar -->
+        <div class="search-bar">
+            <input type="text" id="searchInput" placeholder="Search for songs..." />
+        </div>
+
+        <div class="current-song-container">
+            <h3>Now Playing:</h3>
+            <div id="currentSong">
+                <img id="currentCover" src="" alt="Cover Image" class="cover-image">
+                <div id="currentInfo">
+                    <h2 id="currentTitle">No Song Selected</h2>
+                    <audio controls id="audioPlayer">
+                        <source id="audioSource" src="" type="audio/mpeg">
+                        Your browser does not support the audio element.
+                    </audio>
+                </div>
+            </div>
+        </div>
+
+        <div class="player-controls">
+            <button id="prevButton">Previous</button>
+            <button id="nextButton">Next</button>
+        </div>
+
+        <div class="playlist">
+            <h2>Playlist</h2>
+            <ul id="songList">
+                <% songs.forEach((song, index) => { %>
+                    <li class="song-item" data-index="<%= index %>">
+                        <div class="song-info">
+                            <img src="/<%= song.cover_path.replace('uploads/', '') %>" alt="Cover Image" class="cover-image-small">
+                            <span><%= song.name %> - <%= song.artist %></span>
+                        </div>
+                    </li>
+                <% }) %>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        const songs = <%- JSON.stringify(songs) %>;
+        
+        let currentSongIndex = 0;
+
+        function loadSong(songIndex) {
+            const song = songs[songIndex];
+            // Check if song exists
+            if (song) {
+                document.getElementById('currentCover').src = '/' + song.cover_path.replace('uploads/', '');
+                document.getElementById('currentTitle').textContent = `${song.name} - ${song.artist}`;
+                document.getElementById('audioSource').src = '/' + song.file_path.replace('uploads/', '');
+                document.getElementById('audioPlayer').load();
+                highlightCurrentSong(songIndex);
+            }
+        }
+
+        function highlightCurrentSong(songIndex) {
+            const songItems = document.querySelectorAll('.song-item');
+            songItems.forEach((item, index) => {
+                item.classList.toggle('active', index === songIndex);
+            });
+        }
+
+        document.getElementById('prevButton').addEventListener('click', () => {
+            currentSongIndex = (currentSongIndex > 0) ? currentSongIndex - 1 : songs.length - 1;
+            loadSong(currentSongIndex);
+            document.getElementById('audioPlayer').play();
+        });
+
+        document.getElementById('nextButton').addEventListener('click', () => {
+            currentSongIndex = (currentSongIndex < songs.length - 1) ? currentSongIndex + 1 : 0;
+            loadSong(currentSongIndex);
+            document.getElementById('audioPlayer').play();
+        });
+
+        document.querySelectorAll('.song-item').forEach(item => {
+            item.addEventListener('click', () => {
+                currentSongIndex = parseInt(item.getAttribute('data-index'));
+                loadSong(currentSongIndex);
+                document.getElementById('audioPlayer').play();
+            });
+        });
+
+        // Search functionality
+        document.getElementById('searchInput').addEventListener('input', (event) => {
+            const searchTerm = event.target.value.toLowerCase();
+            const songItems = document.querySelectorAll('.song-item');
+            songItems.forEach(item => {
+                const songInfo = item.querySelector('.song-info span').textContent.toLowerCase();
+                item.style.display = songInfo.includes(searchTerm) ? '' : 'none';
+            });
+        });
+
+        window.onload = () => {
+            loadSong(currentSongIndex);
+        };
+    </script>
+</body>
+</html>
